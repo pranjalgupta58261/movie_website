@@ -1,53 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import Card from "../card/Card";
 import "./MovieList.css";
 import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchAsyncMovies,
+  getAllMovies,
+} from "../../features/movies/moviesSlice";
 
 const MovieList = () => {
-  const [movieList, setMovieList] = useState([]);
+  const dispatch = useDispatch();
   const { type, query } = useParams();
-  console.log(query, type);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [type, query]);
 
-  useEffect(() => {
-    fetchData();
-  }, [type]);
+  const movieList = useSelector(getAllMovies);
 
-  const fetchData = async () => {
-    if (!query && type) {
-      try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${type}?api_key=4e44d9029b1270a757cddc766a1bcb63&language=en-US`
-        );
-        const data = await response.json();
-        setMovieList(data.results);
-      } catch (error) {
-        console.log("Error fetching movie data:", error);
-      }
-    } else if (!type && !query) {
-      try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/trending/movie/day?api_key=4e44d9029b1270a757cddc766a1bcb63&language=en-US`
-        );
-        const data = await response.json();
-        setMovieList(data.results);
-      } catch (error) {
-        console.log("Error fetching movie data:", error);
-      }
+  const fetchData = () => {
+    if (!query && !type) {
+      dispatch(fetchAsyncMovies({ search: "now_playing" }));
+    } else if (!query && type) {
+      dispatch(fetchAsyncMovies({ search: type }));
     } else if (query) {
-      try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/search/movie?query=${query}&include_adult=false&api_key=4e44d9029b1270a757cddc766a1bcb63`
-        );
-
-        const data = await response.json();
-        setMovieList(data.results);
-      } catch (error) {
-        console.log("Error fetching movie data:", error);
-      }
+      dispatch(fetchAsyncMovies({ query }));
     }
   };
 
@@ -55,9 +32,8 @@ const MovieList = () => {
     <div className="movie__list">
       <h2 className="list__title">{(type ? type : "").toUpperCase()}</h2>
       <div className="list__cards">
-        {movieList.map((movie) => (
-          <Card movie={movie} />
-        ))}
+        {movieList &&
+          movieList.map((movie) => <Card movie={movie} key={movie.id} />)}
       </div>
     </div>
   );
